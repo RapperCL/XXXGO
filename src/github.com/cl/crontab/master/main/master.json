@@ -1,0 +1,11 @@
+{
+  "API http监听端口:": "提供增删改查服务",
+  "apiPort": 8070,
+
+  "api接口读超时": "秒",
+  "apiReadTimeout": 5,
+
+  "api接口写超时": "秒",
+  "apiWriteTimeout": 5
+
+}
