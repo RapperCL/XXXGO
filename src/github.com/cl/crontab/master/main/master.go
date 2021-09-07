@@ -1,9 +1,12 @@
 package main
 
 import (
+	// 完整的路径
+	"FoG/src/github.com/cl/crontab/master"
 	"flag"
 	"fmt"
-	"github.com/cl/crontab/master"
+	"time"
+
 	"runtime"
 )
 
@@ -35,7 +38,12 @@ func main() {
 	initEnv()
 
 	// 加载配置
-	if err = master.InitConfig(""); err != nil {
+	if err = master.InitConfig(confFile); err != nil {
+		goto ERR
+	}
+
+	// 任务管理服务
+	if err = master.InitJobMgr(); err != nil {
 		goto ERR
 	}
 
@@ -43,6 +51,11 @@ func main() {
 	if err = master.InitApiServer(); err != nil {
 		fmt.Println("初始化http服务失败!", err)
 		goto ERR
+	}
+
+	// 睡眠防止退出
+	for {
+		time.Sleep(1 * time.Second)
 	}
 
 	return
