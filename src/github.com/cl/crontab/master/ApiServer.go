@@ -3,6 +3,7 @@ package master
 import (
 	"FoG/src/github.com/cl/crontab/common"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -44,14 +45,17 @@ func handlerJobSave(resp http.ResponseWriter, req *http.Request) {
 		goto ERR
 	}
 	// 5 返回正常应答-- 定义统一响应结构体
-	if bytes, err = common.BuildResponse(0, "success", oldJob); err != nil {
+	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
 		// 写入响应
 		resp.Write(bytes)
+	} else {
+		goto ERR
 	}
 
 	return
 
 ERR:
+	fmt.Println(err)
 }
 
 //初始化服务
