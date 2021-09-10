@@ -147,3 +147,25 @@ func (jobMgr *JobMgr) DelJob(jobName string) (jobList []*common.Job, err error) 
 	}
 	return
 }
+
+// 强杀服务,给对应的key设置1s的租约，让其过期
+// 强杀任务，结束掉当前运行的任务
+func (jobMgr *JobMgr) KillJob(jobName string) (err error) {
+	var (
+		leaseResp *clientv3.LeaseGrantResponse
+		leaseId   clientv3.LeaseID
+		killKey   string
+	)
+
+	killKey = common.JOB_KILLER_DIR + jobName
+	// 设置1s的租约
+	if leaseResp, err = jobMgr.lease.Grant(context.TODO(), 1); err != nil {
+		return
+	}
+	leaseId = leaseResp.ID
+	// 给对应的key绑定 此租约
+	if _, err = jobMgr.kv.Put(context.TODO(), killKey, "", clientv3.WithLease(leaseId)); err != nil {
+		return
+	}
+	return
+}

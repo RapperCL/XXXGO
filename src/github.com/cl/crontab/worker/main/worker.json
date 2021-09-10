@@ -3,5 +3,8 @@
   "etcdEndpoints": ["127.0.0.1:2379"],
 
   "etcd连接超时时间": "单位秒",
-  "etcdDialTimeout": 5
+  "etcdDialTimeout": 5,
+
+  "任务为空时，睡眠时间": "单位秒",
+  "scheduleSleepTime": 1
 }

@@ -79,7 +79,6 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 			//转换任务结构体，然后推送给任务调度器
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 			// 同步给scheduler job
-
 		}
 	}
 

@@ -3,12 +3,14 @@ package worker
 import (
 	"encoding/json"
 	"io/ioutil"
+	"time"
 )
 
 // json: 序列化之后的别名
 type Config struct {
-	EtcdEndpoints   []string `json:"etcdEndpoints"`
-	EtcdDialTimeout int      `json:"etcdDialTimeout"`
+	EtcdEndpoints     []string      `json:"etcdEndpoints"`
+	EtcdDialTimeout   int           `json:"etcdDialTimeout"`
+	ScheduleSleepTime time.Duration `json:"scheduleSleepTime"`
 }
 
 var (
