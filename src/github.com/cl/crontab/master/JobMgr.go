@@ -63,7 +63,7 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 		putResp   *clientv3.PutResponse
 		oldJobObj common.Job
 	)
-	jobKey = "/cron/jobs/" + job.Name
+	jobKey = common.JOB_SAVE_DIR + job.Name
 	// 存入etcd时，需要将job序列化
 	if jobValue, err = json.Marshal(job); err != nil {
 		return

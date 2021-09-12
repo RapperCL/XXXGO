@@ -12,4 +12,7 @@ const (
 
 	// 强杀事件
 	JOB_KILLER_DIR = "/cron/killer/"
+
+	// 锁
+	JOB_LOCK_DIR = "/cron/lock/"
 )

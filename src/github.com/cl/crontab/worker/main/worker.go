@@ -37,13 +37,27 @@ func main() {
 	if err = worker.InitConfig(confFile); err != nil {
 		goto ERR
 	}
-
+	//启动执行器
+	if err = worker.InitExecutor(); err != nil{
+		goto ERR
+	}
+	// 初始化任务调度器
+	if err = worker.InitScheduler(); err != nil{
+		goto ERR
+	}
 	// 初始化任务处理器
-
 	if err = worker.InitJobMgr(); err != nil {
 		goto ERR
 	}
-	time.Sleep(5 * time.Second)
+
+
+	// 正常退出
+	for{
+		time.Sleep(1*time.Second)
+	}
+
+	return
+
 ERR:
 	fmt.Println(err)
 }

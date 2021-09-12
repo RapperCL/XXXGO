@@ -48,7 +48,7 @@ func handlerJobSave(resp http.ResponseWriter, req *http.Request) {
 	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
 		// 写入响应
 		resp.Write(bytes)
-	} else {
+	}else{
 		goto ERR
 	}
 
@@ -59,66 +59,31 @@ ERR:
 }
 
 // 查询任务的接口
-func handlerJobList(resp http.ResponseWriter, req *http.Request) {
-	var (
+func handlerJobList(resp http.ResponseWriter,req *http.Request){
+    var(
 		jobList []*common.Job
-		bytes   []byte
-		err     error
+		bytes []byte
+		err error
 	)
-	//基于前缀去查询
-	if jobList, err = G_jobMgr.ListJobs(); err != nil {
-		goto ERR
+    if jobList,err = G_jobMgr.ListJobs(); err != nil{
+    	goto ERR
 	}
-
-	//正常应答-- 将对象序列化为json类型
-	if bytes, err = common.BuildResponse(0, "success", jobList); err == nil {
+	if jobList != nil{
+		if bytes,err = common.BuildResponse(0,"success",jobList);err != nil{
+			goto ERR
+		}
+	}
+	if(bytes != nil){
 		resp.Write(bytes)
-	} else {
-		goto ERR
 	}
 
 	return
-ERR:
-	fmt.Println("接口获取任务信息错误", err)
-	return
+
+
+    ERR:
+    	fmt.Println(err)
 }
 
-// 删除服务
-func handlerJobDel(resp http.ResponseWriter, req *http.Request) {
-	// 基于jobname进行删除
-	var (
-		err     error
-		jobName string
-		jobList []*common.Job
-		bytes   []byte
-	)
-	if err = req.ParseForm(); err != nil {
-		fmt.Println("删除服务-- 表单解析失败")
-		goto ERR
-	}
-	jobName = req.PostForm.Get("name")
-	if jobList, err = G_jobMgr.DelJob(jobName); err != nil {
-		goto ERR
-	}
-
-	// 获取jobList，然后序列化赋值给表单
-
-	if bytes, err = common.BuildResponse(0, "success", jobList); err == nil {
-		resp.Write(bytes)
-	} else {
-		goto ERR
-	}
-	return
-
-ERR:
-	fmt.Println("删除服务异常", err)
-	return
-}
-
-// 强杀服务
-func handlerJobKill(resp http.ResponseWriter, req *http.Request) {
-
-}
 
 //初始化服务
 func InitApiServer() (err error) {
@@ -129,14 +94,10 @@ func InitApiServer() (err error) {
 	)
 	// 配置路由服务
 	mux = http.NewServeMux()
-	//  路由,目标方法
+	//  路由,目标方法--新增更新
 	mux.HandleFunc("/job/save", handlerJobSave)
-	// 查询服务
-	mux.HandleFunc("/job/list", handlerJobList)
-	// 删除服务
-	mux.HandleFunc("/job/del", handlerJobDel)
-	// 任务强杀
-	mux.HandleFunc("/job/kill", handlerJobKill)
+    // 路由查询
+    mux.HandleFunc("/job/list",handlerJobList)
 
 	// 启动TCP监听 , 并将产生的错误抛出
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {

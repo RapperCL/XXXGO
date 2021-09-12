@@ -3,6 +3,7 @@ package worker
 import (
 	"FoG/src/github.com/cl/crontab/common"
 	"context"
+	"fmt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
@@ -75,10 +76,13 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	}
 	// 2 任务信息
 	for _, kvPair = range getResp.Kvs {
-		if job, err = common.UnpackJob(kvPair.Value); err != nil {
+		if job, err = common.UnpackJob(kvPair.Value); err == nil {
 			//转换任务结构体，然后推送给任务调度器
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 			// 同步给scheduler job
+			 G_scheduler.PushJobEvent(jobEvent)
+		}else{
+			fmt.Println("从etcd中获取任务序列化失败",err)
 		}
 	}
 
@@ -108,8 +112,16 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_DELETE, job)
 				}
 				// 将变化的jobEvent 推送给调度处理器
+				G_scheduler.PushJobEvent(jobEvent)
 			}
 		}
 	}()
+	return
+}
+
+
+// 创建任务执行的分布式锁
+func(jobMgr *JobMgr) CreateJobLock(jobName string)(jobLock *JobLock){
+	jobLock = InitJobLock(jobName,jobMgr.kv,jobMgr.lease)
 	return
 }
