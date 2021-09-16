@@ -11,6 +11,8 @@ type Config struct {
 	EtcdEndpoints     []string      `json:"etcdEndpoints"`
 	EtcdDialTimeout   int           `json:"etcdDialTimeout"`
 	ScheduleSleepTime time.Duration `json:"scheduleSleepTime"`
+	WorkerSleepTime   time.Duration `json:"workerSleepTime"`
+	BashDir           string        `json:"bashDir"`
 }
 
 var (

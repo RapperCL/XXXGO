@@ -150,6 +150,7 @@ func (jobMgr *JobMgr) DelJob(jobName string) (jobList []*common.Job, err error) 
 
 // 强杀服务,给对应的key设置1s的租约，让其过期
 // 强杀任务，结束掉当前运行的任务
+// 另外一边，监听此路径，监听到key变化之后，将key发送到channel中，任务执行器，将该任务中断执行
 func (jobMgr *JobMgr) KillJob(jobName string) (err error) {
 	var (
 		leaseResp *clientv3.LeaseGrantResponse

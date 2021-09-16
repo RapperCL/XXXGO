@@ -38,11 +38,11 @@ func main() {
 		goto ERR
 	}
 	//启动执行器
-	if err = worker.InitExecutor(); err != nil{
+	if err = worker.InitExecutor(); err != nil {
 		goto ERR
 	}
 	// 初始化任务调度器
-	if err = worker.InitScheduler(); err != nil{
+	if err = worker.InitScheduler(); err != nil {
 		goto ERR
 	}
 	// 初始化任务处理器
@@ -50,10 +50,9 @@ func main() {
 		goto ERR
 	}
 
-
 	// 正常退出
-	for{
-		time.Sleep(1*time.Second)
+	for {
+		time.Sleep(worker.G_config.WorkerSleepTime * time.Second)
 	}
 
 	return

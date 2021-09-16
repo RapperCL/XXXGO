@@ -6,5 +6,11 @@
   "etcdDialTimeout": 5,
 
   "任务为空时，睡眠时间": "单位秒",
-  "scheduleSleepTime": 1
+  "scheduleSleepTime": 1,
+
+  "worker主线程默认睡眠时间": "单位秒",
+  "workerSleepTime": 1,
+
+  "bash目录": "目录",
+  "bashDir": "D:\\Git\\bin\\bash.exe"
 }

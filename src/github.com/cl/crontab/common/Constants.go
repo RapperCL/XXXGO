@@ -10,6 +10,9 @@ const (
 	// 删除任务事件
 	JOB_EVENT_DELETE = 2
 
+	// 任务强杀事件
+	JOB_EVENT_KILLER = 3
+
 	// 强杀事件
 	JOB_KILLER_DIR = "/cron/killer/"
 

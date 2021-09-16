@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorhill/cronexpr"
@@ -17,7 +18,7 @@ type Job struct {
 
 // 统一返回结构体
 type Response struct {
-	Errno int         `json:"error"`
+	Errno int         `json:"errno"`
 	Msg   string      `json:"msg"`
 	Data  interface{} `json:"data"`
 }
@@ -34,32 +35,35 @@ type JobSchedulePlan struct {
 	Expr     *cronexpr.Expression // cron表达式
 	NextTime time.Time            // 下次执行时间
 }
+
 //任务执行状态,  应该保存当前任务的执行信息 时间和任务即可
 type JobExecuteInfo struct {
-	Job *Job //任务信息
-	PlanTime time.Time  // 理论上的调度时间
-	RealTime time.Time  // 实际的调度时间
+	Job      *Job      //任务信息
+	PlanTime time.Time // 理论上的调度时间
+	RealTime time.Time // 实际的调度时间
+
+	Cancelctx  context.Context    // 任务command的context
+	CancelFunc context.CancelFunc // 用于强行取消任务执行
 }
 
 // 任务执行结果
 type JobExecuteResult struct {
 	ExecuteInfo *JobExecuteInfo // 执行状态
-	Output []byte //脚本输出
-	Err error
-	StartTime time.Time//启动时间
-	EndTime time.Time //结束时间
+	Output      []byte          //脚本输出
+	Err         error
+	StartTime   time.Time //启动时间
+	EndTime     time.Time //结束时间
 
 }
 
-
 // 构建应答方法
-func BuildResponse(erron int, msg string, data interface{}) (resp []byte, err error) {
+func BuildResponse(errno int, msg string, data interface{}) (resp []byte, err error) {
 	// 1 定义一个repsone
 	var (
 		response Response
 	)
 	response.Msg = msg
-	response.Errno = erron
+	response.Errno = errno
 	response.Data = data
 
 	// 2 序列化json
@@ -75,7 +79,7 @@ func UnpackJob(value []byte) (ret *Job, err error) {
 		job *Job
 	)
 	job = &Job{}
-	fmt.Println("要被序列化的输出",string(value))
+	fmt.Println("要被序列化的输出", string(value))
 	if err = json.Unmarshal(value, job); err != nil {
 		return
 	}
@@ -94,6 +98,11 @@ func BuildJobEvent(eventType int, job *Job) (jobEvent *JobEvent) {
 // 从目录结构中提取jobName
 func ExtractJobName(jobKey string) string {
 	return strings.TrimPrefix(jobKey, JOB_SAVE_DIR)
+}
+
+// 从目录中提取任务名
+func ExtractKillerName(jobKey string) string {
+	return strings.TrimPrefix(jobKey, JOB_KILLER_DIR)
 }
 
 // 创建执行任务
@@ -116,11 +125,11 @@ func BuildJobExecutePlan(job *Job) (jobSchedulePlan *JobSchedulePlan, err error)
 }
 
 // 构建执行任务
-func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan)(jobExecuteInfo *JobExecuteInfo){
-    jobExecuteInfo = &JobExecuteInfo{
-    	Job: jobSchedulePlan.Job,
-    	PlanTime: jobSchedulePlan.NextTime,// 计算调度时间
-    	RealTime: time.Now(),  // 真是调度时间
+func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan) (jobExecuteInfo *JobExecuteInfo) {
+	jobExecuteInfo = &JobExecuteInfo{
+		Job:      jobSchedulePlan.Job,
+		PlanTime: jobSchedulePlan.NextTime, // 计算调度时间
+		RealTime: time.Now(),               // 真是调度时间
 	}
 
 	return

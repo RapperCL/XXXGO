@@ -53,6 +53,9 @@ func InitJobMgr() (err error) {
 	// 启动任务监听
 	G_jobMgr.watchJobs()
 
+	// 启动强杀任务监听
+	G_jobMgr.watchKill()
+
 	return
 }
 
@@ -80,9 +83,9 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 			//转换任务结构体，然后推送给任务调度器
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 			// 同步给scheduler job
-			 G_scheduler.PushJobEvent(jobEvent)
-		}else{
-			fmt.Println("从etcd中获取任务序列化失败",err)
+			G_scheduler.PushJobEvent(jobEvent)
+		} else {
+			fmt.Println("从etcd中获取任务序列化失败", err)
 		}
 	}
 
@@ -119,9 +122,43 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	return
 }
 
-
 // 创建任务执行的分布式锁
-func(jobMgr *JobMgr) CreateJobLock(jobName string)(jobLock *JobLock){
-	jobLock = InitJobLock(jobName,jobMgr.kv,jobMgr.lease)
+func (jobMgr *JobMgr) CreateJobLock(jobName string) (jobLock *JobLock) {
+	jobLock = InitJobLock(jobName, jobMgr.kv, jobMgr.lease)
 	return
+}
+
+// 监听任务强杀事件
+func (jobMgr *JobMgr) watchKill() {
+	var (
+		watchChan  clientv3.WatchChan
+		watchResp  clientv3.WatchResponse
+		watchEvent *clientv3.Event
+		jobEvent   *common.JobEvent
+		jobName    string
+		job        *common.Job
+	)
+	// 监听killer 目录
+	go func() {
+		// 监听前缀
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_KILLER_DIR, clientv3.WithPrefix())
+		//从通道中处理监听事件
+		for watchResp = range watchChan {
+			for _, watchEvent = range watchResp.Events {
+				switch watchEvent.Type {
+				case mvccpb.PUT: // 杀死任务事件
+					jobName = common.ExtractJobName(string(watchEvent.Kv.Key))
+					job = &common.Job{Name: jobName} // 只需要获取到name即可
+					jobEvent = common.BuildJobEvent(common.JOB_EVENT_KILLER, job)
+					// 事件下发给scheduler
+					G_scheduler.PushJobEvent(jobEvent)
+
+				case mvccpb.DELETE: // 过期之后自动删除
+				}
+
+			}
+
+		}
+	}()
+
 }

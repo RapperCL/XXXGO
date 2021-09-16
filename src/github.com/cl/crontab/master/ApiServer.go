@@ -48,7 +48,7 @@ func handlerJobSave(resp http.ResponseWriter, req *http.Request) {
 	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
 		// 写入响应
 		resp.Write(bytes)
-	}else{
+	} else {
 		goto ERR
 	}
 
@@ -59,45 +59,109 @@ ERR:
 }
 
 // 查询任务的接口
-func handlerJobList(resp http.ResponseWriter,req *http.Request){
-    var(
+func handlerJobList(resp http.ResponseWriter, req *http.Request) {
+	var (
 		jobList []*common.Job
-		bytes []byte
-		err error
+		bytes   []byte
+		err     error
 	)
-    if jobList,err = G_jobMgr.ListJobs(); err != nil{
-    	goto ERR
+	if jobList, err = G_jobMgr.ListJobs(); err != nil {
+		goto ERR
 	}
-	if jobList != nil{
-		if bytes,err = common.BuildResponse(0,"success",jobList);err != nil{
+	if jobList != nil {
+		if bytes, err = common.BuildResponse(0, "success", jobList); err != nil {
 			goto ERR
 		}
 	}
-	if(bytes != nil){
+	if bytes != nil {
 		resp.Write(bytes)
 	}
 
 	return
 
-
-    ERR:
-    	fmt.Println(err)
+ERR:
+	fmt.Println(err)
 }
 
+// 杀死任务接口
+func handlerJobDel(resp http.ResponseWriter, req *http.Request) {
+	var (
+		jobName string
+		err     error
+		jobList []*common.Job
+		bytes   []byte
+	)
+	if err = req.ParseForm(); err != nil {
+		return
+	}
+	// 获取任务名
+	jobName = req.PostForm.Get("name")
+	if jobList, err = G_jobMgr.DelJob(jobName); err != nil {
+		goto ERR
+	}
+	if jobList != nil {
+		if bytes, err = common.BuildResponse(0, "success", jobList); err != nil {
+			resp.Write(bytes)
+		} else {
+			goto ERR
+		}
+	}
+
+	return
+ERR:
+	fmt.Println(err)
+}
+
+// 任务强杀  -- 强杀只是，杀死当前任务，并不会删除当前人物的的执行
+func handlerJobKill(resp http.ResponseWriter, req *http.Request) {
+	// 将强杀任务放入某一目录下，调度器监听改任务，并强杀任务
+	var (
+		err     error
+		bytes   []byte
+		jobName string
+	)
+	if err = req.ParseForm(); err != nil {
+		return
+	}
+	jobName = req.PostForm.Get("name")
+	// 强杀jobName
+	if err = G_jobMgr.KillJob(jobName); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", nil); err == nil {
+		resp.Write(bytes)
+	}
+	return
+ERR:
+	fmt.Println("任务强杀错误", err)
+	return
+}
 
 //初始化服务
 func InitApiServer() (err error) {
 	var (
-		mux        *http.ServeMux
-		listener   net.Listener
-		httpServer *http.Server
+		mux           *http.ServeMux
+		listener      net.Listener
+		httpServer    *http.Server
+		staticDir     http.Dir
+		staticHandler http.Handler
 	)
 	// 配置路由服务
 	mux = http.NewServeMux()
 	//  路由,目标方法--新增更新
 	mux.HandleFunc("/job/save", handlerJobSave)
-    // 路由查询
-    mux.HandleFunc("/job/list",handlerJobList)
+	// 路由查询
+	mux.HandleFunc("/job/list", handlerJobList)
+	// 任务杀死
+	mux.HandleFunc("/job/del", handlerJobDel)
+	// 任务强杀 --中断command的执行
+	mux.HandleFunc("/job/kill", handlerJobKill)
+
+	// 静态文件目录配置
+	staticDir = http.Dir(G_config.Webroot)
+	staticHandler = http.FileServer(staticDir)
+	mux.Handle("/", http.StripPrefix("/", staticHandler)) // 路径转换
 
 	// 启动TCP监听 , 并将产生的错误抛出
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
